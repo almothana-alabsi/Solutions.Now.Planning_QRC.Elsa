@@ -9,6 +9,11 @@ using Elsa.ActivityResults;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Configuration;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
+using Amazon.SimpleEmail.Model;
+using System.Text;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -21,13 +26,17 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
     public class AddApproval : Activity
     {
         private readonly PlanningDBContext _planningDBContext;
+        private readonly SsoDBContext _ssoDBContext;
         private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
+
 
         public IConfiguration Configuration { get; }
-        public AddApproval(IConfiguration configuration, PlanningDBContext planningDBContext)
+        public AddApproval(IConfiguration configuration, PlanningDBContext planningDBContext,SsoDBContext ssoDBContext)
         {
             _planningDBContext = planningDBContext;
             _configuration = configuration;
+            _ssoDBContext = ssoDBContext;
         }
 
 
@@ -92,8 +101,23 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                         connection.Open();
                         command.ExecuteNonQuery();
                         Console.WriteLine("Records Inserted Successfully");
+                        var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y=>y.username == approvalHistory.actionBy);
+                        string apiUrlSMS = _configuration["SMS:URL"];
+                        string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
+                          using var client = new HttpClient();
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("Successfully send");
+
                     }
-                    catch (SqlException e)
+                    else {
+                        Console.WriteLine("failer send");
+
+                    }
+
+                }
+                catch (SqlException e)
                     {
                         Console.WriteLine("Error Generated. Details: " + e.ToString());
                     }

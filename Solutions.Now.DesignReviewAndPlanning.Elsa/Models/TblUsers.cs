@@ -17,7 +17,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Models
         //public string? nameEN { get; set; }
         //public string? nationalNO { get; set; }
         //public string? email { get; set; }
-        //public string? phone { get; set; }
+        public string? phoneNumber { get; set; }
         //public string? statusNote { get; set; }
         public int? Administration { get; set; }
         public int? Directorate { get; set; }
