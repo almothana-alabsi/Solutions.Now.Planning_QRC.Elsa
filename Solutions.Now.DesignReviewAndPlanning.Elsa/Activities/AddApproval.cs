@@ -104,8 +104,8 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                         var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y=>y.username == approvalHistory.actionBy);
                         string apiUrlSMS = _configuration["SMS:URL"];
                         string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
-                          using var client = new HttpClient();
-                    HttpResponseMessage response = await client.GetAsync(url);
+                         using var client = new HttpClient();
+                         HttpResponseMessage response = await client.GetAsync(url);
                     if (response.IsSuccessStatusCode)
                     {
                         Console.WriteLine("Successfully send");
