@@ -103,30 +103,33 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                         command.ExecuteNonQuery();
                         Console.WriteLine("Records Inserted Successfully");
                         var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y=>y.username.Equals(approvalHistory.actionBy));
-                    if (user != null)
+                    if (Int32.Parse(_configuration["SMS:flag"]) == 1)
                     {
-                        if (user.phoneNumber != null)
+                        if (user != null)
                         {
-                            string apiUrlSMS = _configuration["SMS:URL"];
-                            string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
-                            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-                            HttpClientHandler handler = new HttpClientHandler
+                            if (user.phoneNumber != null)
                             {
-                                ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
-                            };
-
-                            using (var httpClient = new HttpClient(handler))
-                            {
-                                HttpResponseMessage response = await httpClient.GetAsync(url);
-                                if (response.IsSuccessStatusCode)
+                                string apiUrlSMS = _configuration["SMS:URL"];
+                                string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
+                                System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+                                HttpClientHandler handler = new HttpClientHandler
                                 {
-                                    Console.WriteLine("Successfully send");
+                                    ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
+                                };
 
-                                }
-                                else
+                                using (var httpClient = new HttpClient(handler))
                                 {
-                                    Console.WriteLine("failer send");
+                                    HttpResponseMessage response = await httpClient.GetAsync(url);
+                                    if (response.IsSuccessStatusCode)
+                                    {
+                                        Console.WriteLine("Successfully send");
 
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("failer send");
+
+                                    }
                                 }
                             }
                         }
