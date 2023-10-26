@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Net.Http;
 using Amazon.SimpleEmail.Model;
 using System.Text;
+using System.Net;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -101,19 +102,34 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                         connection.Open();
                         command.ExecuteNonQuery();
                         Console.WriteLine("Records Inserted Successfully");
-                        var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y=>y.username == approvalHistory.actionBy);
-                        string apiUrlSMS = _configuration["SMS:URL"];
-                        string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
-                         using var client = new HttpClient();
-                         HttpResponseMessage response = await client.GetAsync(url);
-                    if (response.IsSuccessStatusCode)
+                        var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y=>y.username.Equals(approvalHistory.actionBy));
+                    if (user != null)
                     {
-                        Console.WriteLine("Successfully send");
+                        if (user.phoneNumber != null)
+                        {
+                            string apiUrlSMS = _configuration["SMS:URL"];
+                            string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
+                            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+                            HttpClientHandler handler = new HttpClientHandler
+                            {
+                                ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
+                            };
 
-                    }
-                    else {
-                        Console.WriteLine("failer send");
+                            using (var httpClient = new HttpClient(handler))
+                            {
+                                HttpResponseMessage response = await httpClient.GetAsync(url);
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    Console.WriteLine("Successfully send");
 
+                                }
+                                else
+                                {
+                                    Console.WriteLine("failer send");
+
+                                }
+                            }
+                        }
                     }
 
                 }
