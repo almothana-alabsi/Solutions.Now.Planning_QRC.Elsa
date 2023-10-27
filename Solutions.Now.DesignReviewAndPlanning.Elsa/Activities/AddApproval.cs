@@ -106,50 +106,61 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                     connection.Open();
                     command.ExecuteNonQuery();
                     Console.WriteLine("Records Inserted Successfully");
-                    var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y => y.username.Equals(approvalHistory.actionBy));
-                    if (Int32.Parse(_configuration["SMS:flag"]) == 1)
+                   
+                }
+
+
+                catch (SqlException e)
+                {
+                    Console.WriteLine("Error Generated. Details: " + e.ToString());
+                }
+                finally
+                {
+                    connection.Close();
+                }
+                var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y => y.username.Equals(approvalHistory.actionBy));
+                if (Int32.Parse(_configuration["SMS:flag"]) == 1)
+                {
+                    if (user != null)
                     {
-                        if (user != null)
+                        if (user.phoneNumber != null)
                         {
-                            if (user.phoneNumber != null)
+                            if (user.phoneNumber.Length == 12 && user.phoneNumber.StartsWith("962"))
                             {
-                                if (user.phoneNumber.Length == 12 && user.phoneNumber.StartsWith("962"))
+                                string apiUrlSMS = _configuration["SMS:URL"];
+                                string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
+                                  System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+                                  HttpClientHandler handler = new HttpClientHandler
+                                  {
+                                      ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
+                                  };
+
+                                using (var httpClient = new HttpClient(handler))
                                 {
-                                    string apiUrlSMS = _configuration["SMS:URL"];
-                                    string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
-                                    /*  System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-                                      HttpClientHandler handler = new HttpClientHandler
-                                      {
-                                          ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
-                                      };*/
-
-                                    using (var httpClient = new HttpClient())
+                                    HttpResponseMessage response = await httpClient.GetAsync(url);
+                                    if (response.IsSuccessStatusCode)
                                     {
-                                        HttpResponseMessage response = await httpClient.GetAsync(url);
-                                        if (response.IsSuccessStatusCode)
-                                        {
-                                            Console.WriteLine("Successfully send");
+                                        Console.WriteLine("Successfully send");
 
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("failer send");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("failer send");
 
-                                        }
                                     }
                                 }
                             }
-                            if (Int32.Parse(_configuration["EmailApi:flag"]) == 1)
+                        }
+                        if (Int32.Parse(_configuration["EmailApi:flag"]) == 1)
+                        {
+                            if (user.email != null)
                             {
-                                if (user.email != null)
+                                if (_email.IsValidEmail(user.email))
                                 {
-                                    if (_email.IsValidEmail(user.email)) {
-                                        System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-                                        HttpClientHandler handler = new HttpClientHandler
-                                        {
-                                            ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
-                                            Proxy = new WebProxy(_configuration["EmailApi:Proxy"])
-                                        };
+                                    HttpClientHandler handler = new HttpClientHandler
+                                    {
+                                        Proxy = new WebProxy(_configuration["EmailApi:Proxy"])
+                                    };
 
                                     using (var httpClient = new HttpClient(handler))
                                     {
@@ -171,20 +182,6 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                         }
                     }
                 }
-            }
-
-
-                catch (SqlException e)
-                {
-                    Console.WriteLine("Error Generated. Details: " + e.ToString());
-                }
-                finally
-                {
-                    connection.Close();
-                }
-                
-                
-               
             }
             catch (Exception ex)
             {
