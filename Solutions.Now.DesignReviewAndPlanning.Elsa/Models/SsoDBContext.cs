@@ -10,6 +10,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Models
         }
 
         public DbSet<TblUsers> TblUsers { get; set; }
+        public DbSet<MasterData> MasterData { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("SSO");

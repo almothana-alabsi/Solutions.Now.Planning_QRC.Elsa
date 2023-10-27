@@ -15,6 +15,8 @@ using System.Net.Http;
 using Amazon.SimpleEmail.Model;
 using System.Text;
 using System.Net;
+using Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations;
+using System.Security.Policy;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -27,17 +29,19 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
     public class AddApproval : Activity
     {
         private readonly PlanningDBContext _planningDBContext;
+        private  Email _email;
         private readonly SsoDBContext _ssoDBContext;
         private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
 
 
         public IConfiguration Configuration { get; }
-        public AddApproval(IConfiguration configuration, PlanningDBContext planningDBContext,SsoDBContext ssoDBContext)
+        public AddApproval(IConfiguration configuration, PlanningDBContext planningDBContext,SsoDBContext ssoDBContext,Email email)
         {
             _planningDBContext = planningDBContext;
             _configuration = configuration;
             _ssoDBContext = ssoDBContext;
+            _email = email;
         }
 
 
@@ -97,53 +101,87 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                     string query = "INSERT INTO [MOE-planning-DB].[Plan].[ApprovalHistory] ([requestserial] ,[requestType] ,[createdDate],[actionBy],[expireDate],[status],[URL],[Form],[step],[ActionDetails],createdBy) ";
                     query = query + " values (" + approvalHistory.requestSerial + ", " + approvalHistory.requestType + ",  GETDATE(), '" + approvalHistory.actionBy + "', GETDATE()+10 , " + approvalHistory.status + ", '" + approvalHistory.URL + "', '" + approvalHistory.Form + "', " + approvalHistory.step + "," + approvalHistory.ActionDetails + ",'"+approvalHistory.createdBy+"');";
                     SqlCommand command = new SqlCommand(query, connection);
-                    try
-                    {
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                        Console.WriteLine("Records Inserted Successfully");
-                        var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y=>y.username.Equals(approvalHistory.actionBy));
+                try
+                {
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                    Console.WriteLine("Records Inserted Successfully");
+                    var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y => y.username.Equals(approvalHistory.actionBy));
                     if (Int32.Parse(_configuration["SMS:flag"]) == 1)
                     {
                         if (user != null)
                         {
                             if (user.phoneNumber != null)
                             {
-                                string apiUrlSMS = _configuration["SMS:URL"];
-                                string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
-                                System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-                                HttpClientHandler handler = new HttpClientHandler
+                                if (user.phoneNumber.Length == 12 && user.phoneNumber.StartsWith("962"))
                                 {
-                                    ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
-                                };
+                                    string apiUrlSMS = _configuration["SMS:URL"];
+                                    string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
+                                    /*  System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+                                      HttpClientHandler handler = new HttpClientHandler
+                                      {
+                                          ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
+                                      };*/
 
-                                using (var httpClient = new HttpClient(handler))
-                                {
-                                    HttpResponseMessage response = await httpClient.GetAsync(url);
-                                    if (response.IsSuccessStatusCode)
+                                    using (var httpClient = new HttpClient())
                                     {
-                                        Console.WriteLine("Successfully send");
+                                        HttpResponseMessage response = await httpClient.GetAsync(url);
+                                        if (response.IsSuccessStatusCode)
+                                        {
+                                            Console.WriteLine("Successfully send");
 
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("failer send");
+
+                                        }
                                     }
-                                    else
-                                    {
-                                        Console.WriteLine("failer send");
+                                }
+                            }
+                            if (Int32.Parse(_configuration["EmailApi:flag"]) == 1)
+                            {
+                                if (user.email != null)
+                                {
+                                    if (_email.IsValidEmail(user.email)) {
+                                        System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+                                        HttpClientHandler handler = new HttpClientHandler
+                                        {
+                                            ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
+                                            Proxy = new WebProxy(_configuration["EmailApi:Proxy"])
+                                        };
 
+                                    using (var httpClient = new HttpClient(handler))
+                                    {
+                                        string url = await _email.SendEmail(approvalHistory.actionBy, 4666, approvalHistory.requestSerial, "ar");
+                                        HttpResponseMessage response = await httpClient.GetAsync(url);
+                                        if (response.IsSuccessStatusCode)
+                                        {
+                                            Console.WriteLine("Successfully send");
+
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("failer send");
+
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-
                 }
+            }
+
+
                 catch (SqlException e)
-                    {
-                        Console.WriteLine("Error Generated. Details: " + e.ToString());
-                    }
-                    finally
-                    {
-                        connection.Close();
-                    }
+                {
+                    Console.WriteLine("Error Generated. Details: " + e.ToString());
+                }
+                finally
+                {
+                    connection.Close();
+                }
                 
                 
                

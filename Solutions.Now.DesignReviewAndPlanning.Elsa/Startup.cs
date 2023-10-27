@@ -13,6 +13,7 @@ using Elsa.Scripting.Liquid.Messages;
 using Solutions.Now.DesignReviewAndPlanning.Elsa.Handlers;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using System;
+using Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa
 {
@@ -33,6 +34,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
+            services.AddScoped<Email>();
 
             var elsaSection = Configuration.GetSection("Elsa");
 

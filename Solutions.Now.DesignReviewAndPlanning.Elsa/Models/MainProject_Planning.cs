@@ -7,6 +7,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Models
 
         [Key]
         public int Serial { get; set; }
+        public string? ProjectName { get; set; }
         public int? Donor { get; set; }
         public string? EngOFMap { get; set; }
         public string? EngOfStatistics { get; set; }
