@@ -6,10 +6,15 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations;
 using Solutions.Now.DesignReviewAndPlanning.Elsa.Models;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net;
 using System.Threading.Tasks;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -24,11 +29,16 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 
         private readonly PlanningDBContext _planningDBContext;
         private readonly IConfiguration _configuration;
+        private readonly SsoDBContext _ssoDBContext;
+        private readonly HttpClient _httpClient;
+        private Email _email;
 
-        public NotifictionInterval(IConfiguration configuration, PlanningDBContext planningDBContext)
+        public NotifictionInterval(IConfiguration configuration, PlanningDBContext planningDBContext , SsoDBContext ssoDBContext , Email email)
         {
             _planningDBContext = planningDBContext;
             _configuration = configuration;
+            _ssoDBContext = ssoDBContext;
+            _email = email;
         }
 
 
@@ -174,6 +184,70 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                         finally
                         {
                             connection.Close();
+                        }
+                    }
+                    var user = await _ssoDBContext.TblUsers.OrderBy(x => x.serial).FirstOrDefaultAsync(y => y.username.Equals(approvalHistory.actionBy));
+                    if (Int32.Parse(_configuration["SMS:flagFYI"]) == 1)
+                    {
+                        if (user != null)
+                        {
+                            if (user.phoneNumber != null)
+                            {
+                                if (user.phoneNumber.Length == 12 && user.phoneNumber.StartsWith("962"))
+                                {
+                                    string apiUrlSMS = _configuration["SMS:URL"];
+                                    string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar";
+                                    System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+                                    HttpClientHandler handler = new HttpClientHandler
+                                    {
+                                        ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
+                                    };
+
+                                    using (var httpClient = new HttpClient(handler))
+                                    {
+                                        HttpResponseMessage response = await httpClient.GetAsync(url);
+                                        if (response.IsSuccessStatusCode)
+                                        {
+                                            Console.WriteLine("Successfully send");
+
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("failer send");
+
+                                        }
+                                    }
+                                }
+                            }
+                            if (Int32.Parse(_configuration["EmailApi:flagFYI"]) == 1)
+                            {
+                                if (user.email != null)
+                                {
+                                    if (_email.IsValidEmail(user.email))
+                                    {
+                                        HttpClientHandler handler = new HttpClientHandler
+                                        {
+                                            Proxy = new WebProxy(_configuration["EmailApi:Proxy"])
+                                        };
+
+                                        using (var httpClient = new HttpClient(handler))
+                                        {
+                                            string url = await _email.SendEmail(approvalHistory.actionBy, 4666, approvalHistory.requestSerial, "ar");
+                                            HttpResponseMessage response = await httpClient.GetAsync(url);
+                                            if (response.IsSuccessStatusCode)
+                                            {
+                                                Console.WriteLine("Successfully send");
+
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("failer send");
+
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
