@@ -31,6 +31,8 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations
             string URL = _configuration["EmailApi:URL"];
             string descEn = "";
             string descAr = "";
+            string PlanningURl = _configuration["EmailApi:PlanningURl"];
+
             if (isFYI == 1)
             {
                  descAr = _configuration["EmailApi:descArFYI"];
@@ -59,11 +61,11 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations
 
                     if (langFilter == "en")
                     {
-                        descMSG = descEn + " " + desc.descEN + " / " + projectData;
+                        descMSG = descEn + " " + desc.descEN + " / " + projectData + PlanningURl;
                     }
                     else
                     {
-                        descMSG = descAr + " " + desc.descAR + " / " + projectData;
+                        descMSG = descAr + " " + desc.descAR + " / " + projectData + PlanningURl;
 
                     }
                 }
