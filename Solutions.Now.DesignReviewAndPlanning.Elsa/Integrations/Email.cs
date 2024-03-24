@@ -27,10 +27,21 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations
             _configuration = configuration;
             _ssoDBContext = ssoDBContext;
         }
-        public async Task<string> SendEmail(string actionBy, int requsetType, int? requestSerial, string lang) {
+        public async Task<string> SendEmail(string actionBy, int requsetType, int? requestSerial, string lang,int isFYI) {
             string URL = _configuration["EmailApi:URL"];
-            string descEn = _configuration["EmailApi:descEn"];
-            string descAr = _configuration["EmailApi:descAr"];
+            string descEn = "";
+            string descAr = "";
+            if (isFYI == 1)
+            {
+                 descAr = _configuration["EmailApi:descArFYI"];
+                 descEn = _configuration["EmailApi:descEnFYI"];
+
+            }
+            else
+            {
+                 descAr = _configuration["EmailApi:descAr"];
+                 descEn = _configuration["EmailApi:descEn"];
+            }
             string urlEmail = "";
 
 
