@@ -17,6 +17,7 @@ using System.Text;
 using System.Net;
 using Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations;
 using System.Security.Policy;
+using PhoneNumbers;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -128,7 +129,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                             if (user.phoneNumber.Length == 12 && user.phoneNumber.StartsWith("962"))
                             {
                                 string apiUrlSMS = _configuration["SMS:URL"];
-                                string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar&isFYI=0";
+                                string url = apiUrlSMS + user.phoneNumber.ToString() + "&createdBy="+approvalHistory.actionBy.ToString()+"&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar&isFYI=0";
                                   System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
                                   HttpClientHandler handler = new HttpClientHandler
                                   {
@@ -140,11 +141,13 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                     HttpResponseMessage response = await httpClient.GetAsync(url);
                                     if (response.IsSuccessStatusCode)
                                     {
+
                                         Console.WriteLine("Successfully send");
 
                                     }
                                     else
                                     {
+
                                         Console.WriteLine("failer send");
 
                                     }
@@ -169,12 +172,10 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                         if (response.IsSuccessStatusCode)
                                         {
                                             Console.WriteLine("Successfully send");
-
                                         }
                                         else
                                         {
                                             Console.WriteLine("failer send");
-
                                         }
                                     }
                                 }

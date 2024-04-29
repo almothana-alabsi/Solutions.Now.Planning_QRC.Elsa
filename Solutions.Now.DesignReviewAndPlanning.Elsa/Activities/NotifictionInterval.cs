@@ -196,7 +196,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                 if (user.phoneNumber.Length == 12 && user.phoneNumber.StartsWith("962"))
                                 {
                                     string apiUrlSMS = _configuration["SMS:URL"];
-                                    string url = apiUrlSMS + user.phoneNumber.ToString() + "&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar&isFYI=1";
+                                    string url = apiUrlSMS + user.phoneNumber.ToString() + "&createdBy=" + approvalHistory.actionBy.ToString()+"&requsetType=4666&requestSerial=" + approvalHistory.requestSerial.ToString() + "&lang=ar&isFYI=1";
                                     System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
                                     HttpClientHandler handler = new HttpClientHandler
                                     {

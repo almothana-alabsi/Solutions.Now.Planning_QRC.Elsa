@@ -86,7 +86,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations
                     {
                         if (user.email != null)
                         {
-                             urlEmail = URL + user.email.ToString() + "&messege=" + descMSG;
+                             urlEmail = URL + user.email.ToString() + "&createdBy="+ actionBy.ToString() + "&lang=ar&descMSG=" + descMSG;
                         }
                     }
 
