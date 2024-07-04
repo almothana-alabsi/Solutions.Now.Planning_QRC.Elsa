@@ -160,9 +160,10 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                             {
                                 if (_email.IsValidEmail(user.email))
                                 {
+                                    System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
                                     HttpClientHandler handler = new HttpClientHandler
                                     {
-                                        Proxy = new WebProxy(_configuration["EmailApi:Proxy"])
+                                        ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
                                     };
 
                                     using (var httpClient = new HttpClient(handler))
