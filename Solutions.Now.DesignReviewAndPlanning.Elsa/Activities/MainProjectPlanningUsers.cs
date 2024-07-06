@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -24,12 +25,15 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
     {
         private readonly PlanningDBContext _PlanningDBContext;
         private readonly SsoDBContext _SsoDBContext;
+        private readonly ILogger<MainProjectPlanningUsers> _logger;
 
 
-        public MainProjectPlanningUsers(PlanningDBContext planningDBContext, SsoDBContext ssoDBContext)
+        public MainProjectPlanningUsers(PlanningDBContext planningDBContext, SsoDBContext ssoDBContext, ILogger<MainProjectPlanningUsers> logger)
         {
             _PlanningDBContext = planningDBContext;
             _SsoDBContext = ssoDBContext;
+            _logger = logger;
+
 
         }
         [ActivityInput(Hint = "Enter an expression that evaluates to the Request serial.", DefaultSyntax = SyntaxNames.Literal, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
@@ -133,7 +137,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
             }
             catch (Exception ex)
             {
-                ex.Message.ToString();
+                _logger.LogError(ex, "An error occurred while executing the MainProjectPlanningUsers activity.");
             }
 
             OutputActivityData infoX = new OutputActivityData

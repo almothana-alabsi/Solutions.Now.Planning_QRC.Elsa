@@ -18,6 +18,7 @@ using System.Net;
 using Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations;
 using System.Security.Policy;
 using PhoneNumbers;
+using Microsoft.Extensions.Logging;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -34,15 +35,19 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
         private readonly SsoDBContext _ssoDBContext;
         private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
+        private readonly ILogger<MainProjectPlanningUsers> _logger;
+
 
 
         public IConfiguration Configuration { get; }
-        public AddApproval(IConfiguration configuration, PlanningDBContext planningDBContext,SsoDBContext ssoDBContext,Email email)
+        public AddApproval(IConfiguration configuration, PlanningDBContext planningDBContext,SsoDBContext ssoDBContext,Email email, ILogger<MainProjectPlanningUsers> logger)
         {
             _planningDBContext = planningDBContext;
             _configuration = configuration;
             _ssoDBContext = ssoDBContext;
             _email = email;
+            _logger = logger;
+
         }
 
 
@@ -113,7 +118,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 
                 catch (SqlException e)
                 {
-                    Console.WriteLine("Error Generated. Details: " + e.ToString());
+                    _logger.LogError(e.InnerException.Message, "An error occurred while executing the Add Approval activity.");
                 }
                 finally
                 {
@@ -148,7 +153,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                     else
                                     {
 
-                                        Console.WriteLine("failer send");
+                                        _logger.LogError(response.Content.ToString(), "An error occurred while executing the SMS activity.");
 
                                     }
                                 }
@@ -164,11 +169,15 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                     HttpClientHandler handler = new HttpClientHandler
                                     {
                                         ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
+
                                     };
+
 
                                     using (var httpClient = new HttpClient(handler))
                                     {
                                         string url = await _email.SendEmail(approvalHistory.actionBy, 4666, approvalHistory.requestSerial, "ar",0);
+                                        _logger.LogError(url, "URL");
+
                                         HttpResponseMessage response = await httpClient.GetAsync(url);
                                         if (response.IsSuccessStatusCode)
                                         {
@@ -176,7 +185,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                         }
                                         else
                                         {
-                                            Console.WriteLine("failer send");
+                                            _logger.LogError(response.Content.ToString(), "An error occurred while executing the Email activity.");
                                         }
                                     }
                                 }
@@ -187,7 +196,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.InnerException.Message.ToString());
+                _logger.LogError(ex.InnerException.Message.ToString(), "An error occurred while executing the Add Approval activity.");
             }
             return Done();
         }

@@ -14,6 +14,7 @@ using Solutions.Now.DesignReviewAndPlanning.Elsa.Handlers;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using System;
 using Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations;
+using Microsoft.Extensions.Logging;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa
 {
@@ -103,6 +104,8 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa
                 endpoints.MapControllers();
                 endpoints.MapFallbackToPage("/_Host");
             });
+            // Register the custom exception middleware
+            app.UseMiddleware<ExceptionMiddleware>();
         }
     }
 }
