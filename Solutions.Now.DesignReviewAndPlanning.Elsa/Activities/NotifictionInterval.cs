@@ -15,6 +15,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -32,13 +33,15 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
         private readonly SsoDBContext _ssoDBContext;
         private readonly HttpClient _httpClient;
         private Email _email;
+        private readonly ILogger<NotifictionInterval> _logger;
 
-        public NotifictionInterval(IConfiguration configuration, PlanningDBContext planningDBContext , SsoDBContext ssoDBContext , Email email)
+        public NotifictionInterval(IConfiguration configuration, PlanningDBContext planningDBContext , SsoDBContext ssoDBContext , Email email, ILogger<NotifictionInterval> logger)
         {
             _planningDBContext = planningDBContext;
             _configuration = configuration;
             _ssoDBContext = ssoDBContext;
             _email = email;
+            _logger = logger;
         }
 
 
@@ -213,7 +216,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                         }
                                         else
                                         {
-                                            Console.WriteLine("failer send");
+                                            _logger.LogError(response.Content.ToString(), "An error occurred while executing the SMS activity.");
 
                                         }
                                     }
@@ -225,9 +228,10 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                 {
                                     if (_email.IsValidEmail(user.email))
                                     {
+                                        System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
                                         HttpClientHandler handler = new HttpClientHandler
                                         {
-                                            Proxy = new WebProxy(_configuration["EmailApi:Proxy"])
+                                            ServerCertificateCustomValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => { return true; },
                                         };
 
                                         using (var httpClient = new HttpClient(handler))
@@ -241,7 +245,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                                             }
                                             else
                                             {
-                                                Console.WriteLine("failer send");
+                                                _logger.LogError(response.Content.ToString(), "An error occurred while executing the Email activity.");
 
                                             }
                                         }
@@ -253,7 +257,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.InnerException.Message.ToString());
+                    _logger.LogError(ex.Message, "An error occurred while executing the Add Approval activity.");
                 }
             }
             return Done();
