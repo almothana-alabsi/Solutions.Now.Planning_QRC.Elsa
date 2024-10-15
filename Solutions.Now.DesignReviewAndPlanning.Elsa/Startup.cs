@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Mvc.Versioning;
 using System;
 using Solutions.Now.DesignReviewAndPlanning.Elsa.Integrations;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa
 {
@@ -76,6 +77,7 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa
             services.AddDbContext<SsoDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddNotificationHandler<EvaluatingLiquidExpression, ConfigureLiquidEngine>();
+            services.AddDataProtection().SetDefaultKeyLifetime(TimeSpan.FromDays(10000));
 
         }
 
