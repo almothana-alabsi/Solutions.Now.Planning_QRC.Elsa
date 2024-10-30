@@ -19,6 +19,8 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Handlers
             engine.RegisterType<OutputActivityData>();
             engine.RegisterType<RejectToSectionsFlagsPlanningDTO>();
             engine.RegisterType<EngineeringOfPlanningDTO>();
+            engine.RegisterType<OutputActivityDataWithName>();
+
             engine.RegisterType<string>();
             engine.RegisterType<int>();
 

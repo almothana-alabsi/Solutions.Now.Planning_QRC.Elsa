@@ -16,6 +16,8 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Handlers
             notification.TemplateContext.Options.MemberAccessStrategy.Register<EngineeringOfPlanningDTO>();
             notification.TemplateContext.Options.MemberAccessStrategy.Register<DataForRequestProject>();
             notification.TemplateContext.Options.MemberAccessStrategy.Register<RejectToSectionsFlagsPlanningDTO>();
+            notification.TemplateContext.Options.MemberAccessStrategy.Register<OutputActivityDataWithName>();
+
 
             notification.TemplateContext.Options.MemberAccessStrategy.Register<string>();
             return Task.CompletedTask;

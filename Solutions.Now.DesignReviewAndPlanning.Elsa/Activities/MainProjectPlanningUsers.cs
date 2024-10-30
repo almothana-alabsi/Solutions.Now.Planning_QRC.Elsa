@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Solutions.Now.DesignReviewAndPlanning.Elsa.Models.DTOs;
 
 namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
 {
@@ -38,7 +39,8 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
         }
         [ActivityInput(Hint = "Enter an expression that evaluates to the Request serial.", DefaultSyntax = SyntaxNames.Literal, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public int RequestSerial { get; set; }
-
+        [ActivityInput(Hint = "Enter an expression that evaluates to the Sender.", DefaultSyntax = SyntaxNames.Literal, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string? Sender { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -140,12 +142,13 @@ namespace Solutions.Now.DesignReviewAndPlanning.Elsa.Activities
                 _logger.LogError(ex, "An error occurred while executing the MainProjectPlanningUsers activity.");
             }
 
-            OutputActivityData infoX = new OutputActivityData
+            OutputActivityDataWithName infoX = new OutputActivityDataWithName
             {
                 requestSerial = RequestSerial,
                 steps = steps,
                 names = userNameDB,
-                screens = forms
+                screens = forms,
+                Sender = Sender
 
             };
             context.Output = infoX;
